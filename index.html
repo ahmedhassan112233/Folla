@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folla Store - متجر فولا</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .product-card { transition: all 0.3s ease; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .cart-badge { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .admin-panel { display: none; }
+        .login-form { display: none; }
+        .smooth-scroll { scroll-behavior: smooth; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .category-card { padding: 1rem; }
+            .product-card { margin-bottom: 1rem; }
+            #cartSidebar { width: 100vw; }
+            .hero-section h2 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <h1 class="text-3xl font-bold cursor-pointer" onclick="adminAccess()">🛍️ Folla Store</h1>
+                    <span class="text-sm opacity-80">متجرك المفضل</span>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <button onclick="toggleCart()" class="relative bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-shopping-cart text-lg"></i>
+                        <span id="cartCount" class="cart-badge absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">0</span>
+                    </button>
+                    <div id="userSection">
+                        <button onclick="showUserLogin()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all">
+                            <i class="fas fa-user"></i> دخول
+                        </button>
+                    </div>
+                    <div id="loggedInSection" style="display: none;">
+                        <span id="welcomeUser" class="text-sm opacity-90 ml-4"></span>
+                        <button onclick="userLogout()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all">
+                            <i class="fas fa-sign-out-alt"></i> خروج
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- User Login/Register Form -->
+    <div id="userLoginForm" class="login-form fixed inset-0 bg-black/80 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div class="flex justify-center mb-6">
+                <button id="loginTab" onclick="switchTab('login')" class="px-6 py-2 bg-purple-600 text-white rounded-r-lg">دخول</button>
+                <button id="registerTab" onclick="switchTab('register')" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-l-lg">تسجيل جديد</button>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="loginFormContent">
+                <h3 class="text-2xl font-bold text-center mb-6">تسجيل الدخول</h3>
+                <form onsubmit="handleUserLogin(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">رقم الهاتف</label>
+                        <input type="tel" id="loginPhone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">كلمة المرور</label>
+                        <input type="password" id="loginPassword" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="flex space-x-4 space-x-reverse">
+                        <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all">دخول</button>
+                    </div>
+                </form>
+
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerFormContent" style="display: none;">
+                <h3 class="text-2xl font-bold text-center mb-6">تسجيل جديد</h3>
+                <form onsubmit="handleUserRegister(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">الاسم الكامل</label>
+                        <input type="text" id="registerName" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">رقم الهاتف</label>
+                        <input type="tel" id="registerPhone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">العنوان</label>
+                        <input type="text" id="registerAddress" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">كلمة المرور</label>
+                        <input type="password" id="registerPassword" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="flex space-x-4 space-x-reverse">
+                        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-all">تسجيل</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Form -->
+    <div id="adminLoginForm" class="login-form fixed inset-0 bg-black/50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-center mb-6">تسجيل دخول الإدارة</h3>
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">اسم المستخدم</label>
+                    <input type="text" id="adminUsername" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">كلمة المرور</label>
+                    <input type="password" id="adminPassword" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div class="flex space-x-4 space-x-reverse">
+                    <button type="submit" class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all">دخول</button>
+                    <button type="button" onclick="hideAdminLogin()" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-all">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="admin-panel container mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">لوحة التحكم</h2>
+                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all">
+                    <i class="fas fa-sign-out-alt"></i> خروج
+                </button>
+            </div>
+            
+            <!-- Add Product Form -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                <h3 class="text-xl font-semibold mb-4">إضافة منتج جديد</h3>
+                <form onsubmit="addProduct(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="productName" placeholder="اسم المنتج" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    <input type="number" id="productPrice" placeholder="السعر" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    <input type="url" id="productImage" placeholder="رابط الصورة" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <select id="productCategory" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        <option value="">اختر الفئة</option>
+                        <option value="phones">هواتف</option>
+                        <option value="accessories">إكسسوارات</option>
+                        <option value="cases">جرابات وحماية</option>
+                        <option value="software">سوفت وير</option>
+                    </select>
+                    <textarea id="productDescription" placeholder="وصف المنتج" class="md:col-span-2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" rows="3"></textarea>
+                    <button type="submit" class="md:col-span-2 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-all">
+                        <i class="fas fa-plus"></i> إضافة المنتج
+                    </button>
+                </form>
+            </div>
+
+            <!-- Users Management -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                <h3 class="text-xl font-semibold mb-4">إدارة المستخدمين</h3>
+                <div id="adminUsersList" class="space-y-4"></div>
+            </div>
+
+            <!-- Products Management -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">إدارة المنتجات</h3>
+                <div id="adminProductsList" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent">
+        <!-- Hero Section -->
+        <section class="hero-section gradient-bg text-white py-16">
+            <div class="container mx-auto px-4 text-center">
+                <h2 class="text-5xl font-bold mb-4">مرحباً بك في Folla Store</h2>
+                <p class="text-xl mb-8 opacity-90">اكتشف أفضل المنتجات بأسعار مميزة</p>
+                <button onclick="scrollToProducts()" class="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all">
+                    تسوق الآن <i class="fas fa-arrow-down mr-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Categories -->
+        <section class="py-12">
+            <div class="container mx-auto px-4">
+                <h3 class="text-3xl font-bold text-center mb-8 text-gray-800">الفئات</h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+                    <div onclick="filterProducts('all')" class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer border-2 border-purple-500">
+                        <i class="fas fa-th-large text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="font-semibold">جميع المنتجات</h4>
+                    </div>
+                    <div onclick="filterProducts('phones')" class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                        <i class="fas fa-mobile-alt text-4xl text-blue-600 mb-4"></i>
+                        <h4 class="font-semibold">هواتف</h4>
+                    </div>
+                    <div onclick="filterProducts('accessories')" class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                        <i class="fas fa-headphones text-4xl text-green-600 mb-4"></i>
+                        <h4 class="font-semibold">إكسسوارات</h4>
+                    </div>
+                    <div onclick="filterProducts('cases')" class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                        <i class="fas fa-shield-alt text-4xl text-orange-600 mb-4"></i>
+                        <h4 class="font-semibold">جرابات وحماية</h4>
+                    </div>
+                    <div onclick="filterProducts('software')" class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                        <i class="fas fa-code text-4xl text-pink-600 mb-4"></i>
+                        <h4 class="font-semibold">سوفت وير</h4>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products -->
+        <section id="products" class="py-12 bg-gray-100">
+            <div class="container mx-auto px-4">
+                <h3 class="text-3xl font-bold text-center mb-8 text-gray-800">منتجاتنا</h3>
+                <div id="productsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="fixed left-0 top-0 h-full w-80 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-40 border-r-4 border-purple-500">
+        <div class="p-6 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-shopping-cart ml-2"></i>
+                    سلة التسوق
+                </h3>
+                <button onclick="toggleCart()" class="text-white hover:text-gray-200 transition-all">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div id="cartItems" class="p-6 flex-1 overflow-y-auto max-h-96"></div>
+        <div class="p-6 border-t">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-lg font-semibold">المجموع:</span>
+                <span id="cartTotal" class="text-xl font-bold text-purple-600">0 جنيه</span>
+            </div>
+            <button onclick="checkout()" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105">
+                <i class="fab fa-whatsapp mr-2 text-lg"></i> إتمام الطلب عبر واتساب
+            </button>
+        </div>
+    </div>
+
+    <!-- Cart Overlay -->
+    <div id="cartOverlay" class="fixed inset-0 bg-black/50 z-30 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+    <script>
+        // Global variables
+        let products = [
+            {
+                id: 1,
+                name: "iPhone 15 Pro Max",
+                price: 45000,
+                image: "📱",
+                category: "phones",
+                description: "أحدث هاتف آيفون بمواصفات عالية وكاميرا متطورة"
+            },
+            {
+                id: 2,
+                name: "Samsung Galaxy S24 Ultra",
+                price: 42000,
+                image: "📱",
+                category: "phones",
+                description: "هاتف سامسونج الرائد بشاشة Dynamic AMOLED"
+            },
+            {
+                id: 3,
+                name: "سماعات AirPods Pro",
+                price: 8500,
+                image: "🎧",
+                category: "accessories",
+                description: "سماعات لاسلكية مع إلغاء الضوضاء النشط"
+            },
+            {
+                id: 4,
+                name: "جراب حماية شفاف",
+                price: 150,
+                image: "🛡️",
+                category: "cases",
+                description: "جراب حماية شفاف مقاوم للصدمات"
+            },
+            {
+                id: 5,
+                name: "شاحن لاسلكي سريع",
+                price: 450,
+                image: "🔌",
+                category: "accessories",
+                description: "شاحن لاسلكي بقوة 15 واط للشحن السريع"
+            },
+            {
+                id: 6,
+                name: "حامل هاتف للسيارة",
+                price: 120,
+                image: "🚗",
+                category: "accessories",
+                description: "حامل مغناطيسي قوي للهاتف في السيارة"
+            },
+            {
+                id: 7,
+                name: "تطبيق إدارة المتاجر",
+                price: 2500,
+                image: "💻",
+                category: "software",
+                description: "تطبيق متكامل لإدارة المتاجر والمبيعات"
+            },
+            {
+                id: 8,
+                name: "واقي شاشة زجاجي",
+                price: 80,
+                image: "🔒",
+                category: "cases",
+                description: "واقي شاشة من الزجاج المقوى مقاوم للخدش"
+            }
+        ];
+
+        let cart = [];
+        let currentFilter = 'all';
+        let isAdmin = false;
+        let currentUser = JSON.parse(localStorage.getItem('follaStoreCurrentUser')) || null;
+        let users = JSON.parse(localStorage.getItem('follaStoreUsers')) || [];
+        let adminClickCount = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            displayProducts();
+            updateCartUI();
+            updateUserUI();
+            
+            // Check if user is logged in, if not show login form
+            if (!currentUser) {
+                showUserLogin();
+            }
+        });
+
+        // Secret admin access
+        function adminAccess() {
+            adminClickCount++;
+            if (adminClickCount >= 5) {
+                showAdminLogin();
+                adminClickCount = 0;
+            }
+            setTimeout(() => { adminClickCount = 0; }, 3000);
+        }
+
+        // User Login functions
+        function showUserLogin() {
+            document.getElementById('userLoginForm').style.display = 'flex';
+        }
+
+        function hideUserLogin() {
+            // لا يمكن إخفاء نافذة التسجيل إلا بعد تسجيل الدخول
+            if (currentUser) {
+                document.getElementById('userLoginForm').style.display = 'none';
+            }
+        }
+
+        function switchTab(tab) {
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const loginContent = document.getElementById('loginFormContent');
+            const registerContent = document.getElementById('registerFormContent');
+
+            if (tab === 'login') {
+                loginTab.classList.add('bg-purple-600', 'text-white');
+                loginTab.classList.remove('bg-gray-300', 'text-gray-700');
+                registerTab.classList.add('bg-gray-300', 'text-gray-700');
+                registerTab.classList.remove('bg-purple-600', 'text-white');
+                loginContent.style.display = 'block';
+                registerContent.style.display = 'none';
+            } else {
+                registerTab.classList.add('bg-purple-600', 'text-white');
+                registerTab.classList.remove('bg-gray-300', 'text-gray-700');
+                loginTab.classList.add('bg-gray-300', 'text-gray-700');
+                loginTab.classList.remove('bg-purple-600', 'text-white');
+                registerContent.style.display = 'block';
+                loginContent.style.display = 'none';
+            }
+        }
+
+        function handleUserLogin(event) {
+            event.preventDefault();
+            const phone = document.getElementById('loginPhone').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = users.find(u => u.phone === phone && u.password === password);
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('follaStoreCurrentUser', JSON.stringify(user));
+                hideUserLogin();
+                updateUserUI();
+                alert(`مرحباً ${user.name}! تم تسجيل الدخول بنجاح`);
+            } else {
+                alert('رقم الهاتف أو كلمة المرور غير صحيحة');
+            }
+        }
+
+        function handleUserRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const phone = document.getElementById('registerPhone').value;
+            const address = document.getElementById('registerAddress').value;
+            const password = document.getElementById('registerPassword').value;
+
+            // Check if user already exists
+            if (users.find(u => u.phone === phone)) {
+                alert('رقم الهاتف مسجل مسبقاً');
+                return;
+            }
+
+            const newUser = {
+                id: Date.now(),
+                name,
+                phone,
+                address,
+                password,
+                registeredAt: new Date().toISOString()
+            };
+
+            users.push(newUser);
+            localStorage.setItem('follaStoreUsers', JSON.stringify(users));
+            
+            currentUser = newUser;
+            localStorage.setItem('follaStoreCurrentUser', JSON.stringify(newUser));
+            hideUserLogin();
+            updateUserUI();
+            alert(`مرحباً ${name}! تم إنشاء حسابك بنجاح`);
+        }
+
+        function userLogout() {
+            currentUser = null;
+            localStorage.removeItem('follaStoreCurrentUser');
+            updateUserUI();
+            showUserLogin(); // Show login form again after logout
+        }
+
+        function updateUserUI() {
+            const userSection = document.getElementById('userSection');
+            const loggedInSection = document.getElementById('loggedInSection');
+            const welcomeUser = document.getElementById('welcomeUser');
+
+            if (currentUser) {
+                userSection.style.display = 'none';
+                loggedInSection.style.display = 'block';
+                welcomeUser.textContent = `مرحباً ${currentUser.name}`;
+            } else {
+                userSection.style.display = 'block';
+                loggedInSection.style.display = 'none';
+            }
+        }
+
+        // Admin Login functions
+        function showAdminLogin() {
+            hideUserLogin();
+            document.getElementById('adminLoginForm').style.display = 'flex';
+        }
+
+        function hideAdminLogin() {
+            document.getElementById('adminLoginForm').style.display = 'none';
+        }
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+
+            if (username === 'admin' && password === 'admin123') {
+                isAdmin = true;
+                hideAdminLogin();
+                showAdminPanel();
+                displayAdminProducts();
+                displayAdminUsers();
+            } else {
+                alert('اسم المستخدم أو كلمة المرور غير صحيحة');
+            }
+        }
+
+        function logout() {
+            isAdmin = false;
+            hideAdminPanel();
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
+        }
+
+        function showAdminPanel() {
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+        }
+
+        function hideAdminPanel() {
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
+        // Product management
+        function addProduct(event) {
+            event.preventDefault();
+            const name = document.getElementById('productName').value;
+            const price = parseFloat(document.getElementById('productPrice').value);
+            const image = document.getElementById('productImage').value || '📦';
+            const category = document.getElementById('productCategory').value;
+            const description = document.getElementById('productDescription').value;
+
+            const newProduct = {
+                id: Date.now(),
+                name,
+                price,
+                image,
+                category,
+                description
+            };
+
+            products.push(newProduct);
+            displayProducts();
+            displayAdminProducts();
+            
+            // Reset form
+            event.target.reset();
+            alert('تم إضافة المنتج بنجاح!');
+        }
+
+        function deleteProduct(id) {
+            if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+                products = products.filter(p => p.id !== id);
+                displayProducts();
+                displayAdminProducts();
+            }
+        }
+
+        function displayAdminUsers() {
+            const container = document.getElementById('adminUsersList');
+            if (users.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">لا يوجد مستخدمين مسجلين</p>';
+                return;
+            }
+            
+            container.innerHTML = users.map(user => `
+                <div class="flex items-center justify-between bg-white p-4 rounded-lg shadow">
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <i class="fas fa-user-circle text-2xl text-purple-600"></i>
+                        <div>
+                            <h4 class="font-semibold">${user.name}</h4>
+                            <p class="text-gray-600 text-sm">${user.phone}</p>
+                            <p class="text-gray-500 text-xs">${user.address}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <span class="text-xs text-gray-400">${new Date(user.registeredAt).toLocaleDateString('ar-EG')}</span>
+                        <button onclick="deleteUser(${user.id})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteUser(userId) {
+            if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
+                users = users.filter(u => u.id !== userId);
+                localStorage.setItem('follaStoreUsers', JSON.stringify(users));
+                displayAdminUsers();
+                
+                // If current user is deleted, logout
+                if (currentUser && currentUser.id === userId) {
+                    currentUser = null;
+                    updateUserUI();
+                }
+            }
+        }
+
+        function displayAdminProducts() {
+            const container = document.getElementById('adminProductsList');
+            container.innerHTML = products.map(product => `
+                <div class="flex items-center justify-between bg-white p-4 rounded-lg shadow">
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <span class="text-2xl">${product.image}</span>
+                        <div>
+                            <h4 class="font-semibold">${product.name}</h4>
+                            <p class="text-gray-600">${product.price} جنيه</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteProduct(${product.id})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Product display
+        function displayProducts() {
+            const container = document.getElementById('productsList');
+            const filteredProducts = currentFilter === 'all' ? products : products.filter(p => p.category === currentFilter);
+            
+            container.innerHTML = filteredProducts.map(product => `
+                <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="p-6 text-center">
+                        <div class="text-6xl mb-4">${product.image}</div>
+                        <h4 class="text-xl font-semibold mb-2">${product.name}</h4>
+                        <p class="text-gray-600 mb-4">${product.description}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-purple-600">${product.price} جنيه</span>
+                            <button onclick="addToCart(${product.id})" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-all">
+                                <i class="fas fa-cart-plus"></i> أضف للسلة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterProducts(category) {
+            currentFilter = category;
+            displayProducts();
+            
+            // Update active category
+            document.querySelectorAll('.category-card').forEach(card => {
+                card.classList.remove('border-2', 'border-purple-500');
+            });
+            event.target.closest('.category-card').classList.add('border-2', 'border-purple-500');
+        }
+
+        // Cart functions
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existingItem = cart.find(item => item.id === productId);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+
+            updateCartUI();
+            
+            // Show success animation
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> تم الإضافة';
+            button.classList.add('bg-green-600');
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-green-600');
+            }, 1000);
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartUI();
+        }
+
+        function updateQuantity(productId, change) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    updateCartUI();
+                }
+            }
+        }
+
+        function updateCartUI() {
+            const cartCount = document.getElementById('cartCount');
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            cartCount.textContent = totalItems;
+            cartTotal.textContent = `${totalPrice} جنيه`;
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="text-gray-500 text-center">السلة فارغة</p>';
+            } else {
+                cartItems.innerHTML = cart.map(item => `
+                    <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-3 space-x-reverse">
+                            <span class="text-2xl">${item.image}</span>
+                            <div>
+                                <h5 class="font-semibold text-sm">${item.name}</h5>
+                                <p class="text-purple-600 font-bold">${item.price} جنيه</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <button onclick="updateQuantity(${item.id}, -1)" class="bg-gray-300 hover:bg-gray-400 w-8 h-8 rounded-full flex items-center justify-center">-</button>
+                            <span class="mx-2 font-semibold">${item.quantity}</span>
+                            <button onclick="updateQuantity(${item.id}, 1)" class="bg-purple-600 hover:bg-purple-700 text-white w-8 h-8 rounded-full flex items-center justify-center">+</button>
+                            <button onclick="removeFromCart(${item.id})" class="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center mr-2">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function toggleCart() {
+            const sidebar = document.getElementById('cartSidebar');
+            const overlay = document.getElementById('cartOverlay');
+            
+            if (sidebar.classList.contains('translate-x-full')) {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        // Checkout function
+        function checkout() {
+            if (cart.length === 0) {
+                alert('السلة فارغة!');
+                return;
+            }
+
+            if (!currentUser) {
+                alert('يجب تسجيل الدخول أولاً لإتمام الطلب');
+                showUserLogin();
+                return;
+            }
+
+            const orderDetails = cart.map(item => 
+                `${item.name} - الكمية: ${item.quantity} - السعر: ${item.price * item.quantity} جنيه`
+            ).join('\n');
+
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            const message = `🛍️ *طلب جديد من Folla Store*\n\n` +
+                           `👤 *بيانات العميل:*\n` +
+                           `الاسم: ${currentUser.name}\n` +
+                           `الهاتف: ${currentUser.phone}\n` +
+                           `العنوان: ${currentUser.address}\n\n` +
+                           `📋 *تفاصيل الطلب:*\n${orderDetails}\n\n` +
+                           `💰 *المجموع الكلي:* ${totalPrice} جنيه\n\n` +
+                           `📞 *يرجى التواصل لتأكيد الطلب وتفاصيل التوصيل*`;
+
+            const whatsappUrl = `https://wa.me/201011781202?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            // Clear cart after order
+            cart = [];
+            updateCartUI();
+            toggleCart();
+        }
+
+        // Utility functions
+        function scrollToProducts() {
+            document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Close cart when clicking overlay
+        document.getElementById('cartOverlay').addEventListener('click', toggleCart);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97a59095b1dd2770',t:'MTc1NzA3MzYxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
